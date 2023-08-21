@@ -29,7 +29,29 @@ import Starscream
 /// The class that handles the engine.io protocol and transports.
 /// See `SocketEnginePollable` and `SocketEngineWebsocket` for transport specific methods.
 open class SocketEngine:
-        NSObject, WebSocketDelegate, URLSessionDelegate, SocketEnginePollable, SocketEngineWebsocket, ConfigSettable {
+    NSObject, WebSocketDelegate, URLSessionDelegate, SocketEnginePollable, SocketEngineWebsocket, ConfigSettable {
+    public func didReceive(event: Starscream.WebSocketEvent, client: Starscream.WebSocketClient) {
+        // TODO: Implement this method later
+        switch event {
+        case let .connected(headers):
+            wsConnected = true
+            self.client?.engineDidWebsocketUpgrade(headers: headers)
+            websocketDidConnect()
+        case .cancelled:
+            wsConnected = false
+            websocketDidDisconnect(error: EngineError.canceled)
+        case .disconnected(_, _):
+            wsConnected = false
+            websocketDidDisconnect(error: nil)
+        case let .text(msg):
+            parseEngineMessage(msg)
+        case let .binary(data):
+            parseEngineData(data)
+        case _:
+            break
+        }
+    }
+    
     // MARK: Properties
 
     private static let logType = "SocketEngine"
